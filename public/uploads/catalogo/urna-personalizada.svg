@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Ilustración de una urna personalizada">
+  <rect width="640" height="360" fill="#faf8f5"/>
+  <circle cx="520" cy="80" r="120" fill="#f1ecf8"/>
+  <circle cx="100" cy="300" r="95" fill="#f6f2ec"/>
+  <path d="M272 92h96v26c0 10 8 18 18 26 18 14 28 38 28 66v66c0 24-20 44-44 44H270c-24 0-44-20-44-44v-66c0-28 10-52 28-66 10-8 18-16 18-26V92Z" fill="#f0e9fa" stroke="#7b68ae" stroke-width="5"/>
+  <rect x="262" y="74" width="116" height="20" rx="8" fill="#7b68ae"/>
+  <circle cx="320" cy="204" r="38" fill="#fff" stroke="#c3b7dd" stroke-width="4"/>
+  <path d="M300 214c4-16 14-24 20-24s16 8 20 24" fill="#c3b7dd"/>
+  <circle cx="320" cy="192" r="9" fill="#a493ce"/>
+  <path d="M282 264h76" stroke="#a493ce" stroke-width="6" stroke-linecap="round"/>
+  <path d="M246 288h148" stroke="#c3b7dd" stroke-width="12" stroke-linecap="round"/>
+</svg>

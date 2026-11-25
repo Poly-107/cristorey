@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Ilustración de un ataúd">
+  <rect width="640" height="360" fill="#faf8f5"/>
+  <circle cx="520" cy="70" r="120" fill="#f1ecf8"/>
+  <circle cx="90" cy="310" r="90" fill="#f6f2ec"/>
+  <path d="M320 58c58 0 92 34 100 92l18 152c4 30-8 46-38 46H240c-30 0-42-16-38-46l18-152c8-58 42-92 100-92Z" fill="#e6dcf5" stroke="#7b68ae" stroke-width="5"/>
+  <path d="M320 58c-58 0-92 34-100 92l-18 152c-4 30 8 46 38 46h160c30 0 42-16 38-46l-18-152c-8-58-42-92-100-92Z" fill="none" stroke="#a493ce" stroke-width="3"/>
+  <path d="M320 96v150M286 140h68" stroke="#7b68ae" stroke-width="8" stroke-linecap="round" opacity=".75"/>
+  <rect x="236" y="292" width="168" height="12" rx="6" fill="#c3b7dd"/>
+</svg>
