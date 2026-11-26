@@ -27,6 +27,34 @@ final class Funeraria
 
     public const TRIP_STATUSES = ['Programado', 'En curso', 'Finalizado'];
 
+    /** Servicios comerciales mostrados en la landing; no crean registros ni reemplazan Expedientes. */
+    public const LANDING_SERVICES = [
+        [
+            'title' => 'Servicio funerario completo',
+            'description' => 'Coordinación integral desde la recepción hasta la despedida, con un responsable en cada etapa.',
+            'includes' => ['Preparación y presentación', 'Sala velatoria', 'Gestiones administrativas'],
+            'action' => 'Coordinar servicio',
+        ],
+        [
+            'title' => 'Reserva anticipada',
+            'description' => 'Asegure ataúdes y urnas con abonos parciales. El saldo se cancela antes de emitir la boleta.',
+            'includes' => ['Ataúdes y urnas en stock', 'Abonos simples', 'Boleta al pagar el total'],
+            'action' => 'Consultar reserva',
+        ],
+        [
+            'title' => 'Velatorio y ceremonia',
+            'description' => 'Espacios de despedida adaptados a la tradición y necesidades de cada familia.',
+            'includes' => ['Salas velatorias', 'Capilla Central', 'Acompañamiento del equipo'],
+            'action' => 'Consultar salas',
+        ],
+        [
+            'title' => 'Traslados y cremación',
+            'description' => 'Gestión de recorridos, traslados y coordinación con cementerios y crematorios.',
+            'includes' => ['Carrozas y furgón', 'Coordinación de horarios', 'Gestiones con cementerio'],
+            'action' => 'Consultar traslado',
+        ],
+    ];
+
     public const REPORT_TYPES = [
         'servicios' => 'Expedientes',
         'reservas' => 'Reservas',
