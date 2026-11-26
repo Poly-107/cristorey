@@ -5,8 +5,10 @@ use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FleetController;
+use App\Http\Controllers\FuneralPackageController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\ServiceController;
@@ -20,6 +22,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Módulos operativos: gerencia, encargado y mostrador
     Route::middleware('role:dueno,encargado,mostrador')->group(function () {
+        // Módulo de Servicios Funerarios: catálogo de paquetes y cotizaciones.
+        Route::get('servicios/cotizaciones', [QuoteController::class, 'index'])->name('servicios.cotizaciones.index');
+        Route::post('servicios/cotizaciones', [QuoteController::class, 'store'])->name('servicios.cotizaciones.store');
+        Route::put('servicios/cotizaciones/{quote}', [QuoteController::class, 'update'])->name('servicios.cotizaciones.update');
+        Route::delete('servicios/cotizaciones/{quote}', [QuoteController::class, 'destroy'])->name('servicios.cotizaciones.destroy');
+        Route::post('servicios/cotizaciones/{quote}/contratar', [QuoteController::class, 'contratar'])->name('servicios.cotizaciones.contratar');
+
+        Route::resource('servicios', FuneralPackageController::class)
+            ->except(['show', 'create', 'edit'])
+            ->names('servicios')
+            ->parameters(['servicios' => 'funeralPackage']);
+
         Route::resource('expedientes', ServiceController::class)
             ->except(['show', 'create', 'edit'])
             ->names('expedientes')->parameters(['expedientes' => 'service']);

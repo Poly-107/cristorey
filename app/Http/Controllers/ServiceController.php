@@ -14,7 +14,7 @@ class ServiceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Service::with('product')->orderByDesc('service_date');
+        $query = Service::with(['product', 'package', 'quote'])->orderByDesc('service_date');
 
         if ($request->filled('search')) {
             $search = $request->string('search')->toString();

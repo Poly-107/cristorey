@@ -10,7 +10,8 @@ class Service extends Model
 {
     protected $fillable = [
         'code', 'service_date', 'deceased_name', 'contractor_name',
-        'contractor_email', 'product_id', 'viewing_room', 'status', 'notes',
+        'contractor_email', 'product_id', 'funeral_package_id', 'quote_id',
+        'viewing_room', 'status', 'notes',
     ];
 
     protected function casts(): array
@@ -21,6 +22,16 @@ class Service extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(CatalogItem::class);
+    }
+
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(FuneralPackage::class, 'funeral_package_id');
+    }
+
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class);
     }
 
     public function invoices(): HasMany

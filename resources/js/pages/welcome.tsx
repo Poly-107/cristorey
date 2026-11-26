@@ -14,10 +14,11 @@ type LandingProduct = {
 };
 
 type ServicePackage = {
-    title: string;
-    description: string;
+    id: number;
+    name: string;
+    description: string | null;
+    base_price: number;
     includes: string[];
-    action: string;
 };
 
 type Props = {
@@ -130,31 +131,42 @@ export default function Welcome() {
                                 Cada servicio se coordina con nuestra familia colaboradora y se registra
                                 en el sistema para dar seguimiento claro a su solicitud.
                             </p>
-                            <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-                                {servicePackages.map((service, index) => (
-                                    <article key={service.title} className="funeraria-card flex flex-col p-6">
-                                        <span className="flex size-10 items-center justify-center rounded-lg bg-[#f1ecf8] text-sm font-semibold text-[#7b68ae]">
-                                            0{index + 1}
-                                        </span>
-                                        <h3 className="mt-5 font-semibold">{service.title}</h3>
-                                        <p className="mt-2 text-sm leading-relaxed text-[#7a7285]">{service.description}</p>
-                                        <ul className="mt-4 space-y-1.5 text-xs text-[#6f6878]">
-                                            {service.includes.map((item) => (
-                                                <li key={item} className="flex items-start gap-2">
-                                                    <Check className="mt-0.5 size-3.5 shrink-0 text-[#2f6b45]" />
-                                                    {item}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        <a
-                                            href="#contacto"
-                                            className="mt-auto pt-5 text-sm font-semibold text-[#5a4a86] transition hover:text-[#7b68ae]"
-                                        >
-                                            {service.action} <span aria-hidden="true">→</span>
-                                        </a>
-                                    </article>
-                                ))}
-                            </div>
+                            {servicePackages.length === 0 ? (
+                                <div className="funeraria-card mt-8 p-8 text-center text-sm text-[#7a7285]">
+                                    Estamos actualizando nuestros servicios. Consulte disponibilidad por teléfono.
+                                </div>
+                            ) : (
+                                <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                                    {servicePackages.map((service, index) => (
+                                        <article key={service.id} className="funeraria-card flex flex-col p-6">
+                                            <span className="flex size-10 items-center justify-center rounded-lg bg-[#f1ecf8] text-sm font-semibold text-[#7b68ae]">
+                                                0{index + 1}
+                                            </span>
+                                            <h3 className="mt-5 font-semibold">{service.name}</h3>
+                                            <p className="mt-2 text-sm leading-relaxed text-[#7a7285]">{service.description}</p>
+                                            <ul className="mt-4 space-y-1.5 text-xs text-[#6f6878]">
+                                                {service.includes.map((item) => (
+                                                    <li key={item} className="flex items-start gap-2">
+                                                        <Check className="mt-0.5 size-3.5 shrink-0 text-[#2f6b45]" />
+                                                        {item}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            <div className="mt-auto pt-5">
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-[#8b8495]">
+                                                    Desde {clp(service.base_price)}
+                                                </p>
+                                                <a
+                                                    href="#contacto"
+                                                    className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-[#5a4a86] transition hover:text-[#7b68ae]"
+                                                >
+                                                    Cotizar servicio <span aria-hidden="true">→</span>
+                                                </a>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </section>
 

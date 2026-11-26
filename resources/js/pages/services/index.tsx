@@ -26,6 +26,10 @@ type Service = {
     contractor_name: string | null;
     contractor_email: string | null;
     product_id: number | null;
+    funeral_package_id: number | null;
+    quote_id: number | null;
+    package: { id: number; name: string; code: string } | null;
+    quote: { id: number; folio: string } | null;
     viewing_room: string | null;
     status: string;
     notes: string | null;
@@ -158,6 +162,7 @@ export default function Services({ services, products, statuses, rooms, filters 
                                     <Th>Fallecido/a</Th>
                                     <Th>Contratante</Th>
                                     <Th>Producto</Th>
+                                    <Th>Origen</Th>
                                     <Th>Sala</Th>
                                     <Th>Estado</Th>
                                     <Th>Acciones</Th>
@@ -171,6 +176,9 @@ export default function Services({ services, products, statuses, rooms, filters 
                                         <Td className="font-medium">{service.deceased_name}</Td>
                                         <Td className="text-[#7a7285]">{service.contractor_name ?? '—'}</Td>
                                         <Td className="text-[#7a7285]">{service.product?.name ?? '—'}</Td>
+                                        <Td className="text-[#7a7285]">
+                                            {service.package?.name ?? service.quote?.folio ?? '—'}
+                                        </Td>
                                         <Td className="text-[#7a7285]">{service.viewing_room ?? '—'}</Td>
                                         <Td><Badge tone={toneForStatus(service.status)}>{service.status}</Badge></Td>
                                         <Td>

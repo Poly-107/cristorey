@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CatalogItem;
-use App\Support\Funeraria;
+use App\Models\FuneralPackage;
 use Inertia\Inertia;
 
 class LandingController extends Controller
@@ -22,7 +22,10 @@ class LandingController extends Controller
 
         return Inertia::render('welcome', [
             'products' => $products,
-            'servicePackages' => Funeraria::LANDING_SERVICES,
+            'servicePackages' => FuneralPackage::where('active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name', 'description', 'base_price', 'includes']),
             'flow' => ['Reserva', 'Abonos', 'Pago total', 'Boleta'],
         ]);
     }

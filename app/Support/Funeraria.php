@@ -27,32 +27,13 @@ final class Funeraria
 
     public const TRIP_STATUSES = ['Programado', 'En curso', 'Finalizado'];
 
-    /** Servicios comerciales mostrados en la landing; no crean registros ni reemplazan Expedientes. */
-    public const LANDING_SERVICES = [
-        [
-            'title' => 'Servicio funerario completo',
-            'description' => 'Coordinación integral desde la recepción hasta la despedida, con un responsable en cada etapa.',
-            'includes' => ['Preparación y presentación', 'Sala velatoria', 'Gestiones administrativas'],
-            'action' => 'Coordinar servicio',
-        ],
-        [
-            'title' => 'Reserva anticipada',
-            'description' => 'Asegure ataúdes y urnas con abonos parciales. El saldo se cancela antes de emitir la boleta.',
-            'includes' => ['Ataúdes y urnas en stock', 'Abonos simples', 'Boleta al pagar el total'],
-            'action' => 'Consultar reserva',
-        ],
-        [
-            'title' => 'Velatorio y ceremonia',
-            'description' => 'Espacios de despedida adaptados a la tradición y necesidades de cada familia.',
-            'includes' => ['Salas velatorias', 'Capilla Central', 'Acompañamiento del equipo'],
-            'action' => 'Consultar salas',
-        ],
-        [
-            'title' => 'Traslados y cremación',
-            'description' => 'Gestión de recorridos, traslados y coordinación con cementerios y crematorios.',
-            'includes' => ['Carrozas y furgón', 'Coordinación de horarios', 'Gestiones con cementerio'],
-            'action' => 'Consultar traslado',
-        ],
+    public const QUOTE_STATUSES = ['Cotizada', 'Contratada', 'Anulada'];
+
+    public const SERVICE_PACKAGE_CATEGORIES = [
+        'Servicio completo',
+        'Reserva anticipada',
+        'Velatorio y ceremonia',
+        'Traslados y cremación',
     ];
 
     public const REPORT_TYPES = [
@@ -87,6 +68,7 @@ final class Funeraria
     {
         $basic = [
             'dashboard' => true,
+            'servicios' => false,
             'expedientes' => false,
             'catalogo' => false,
             'reservas' => false,
@@ -101,8 +83,8 @@ final class Funeraria
 
         return match ($role) {
             'dueno' => array_map(fn () => true, $basic),
-            'encargado' => [...$basic, 'expedientes' => true, 'catalogo' => true, 'reservas' => true, 'informes' => true, 'ausencias' => true, 'calendario' => true, 'flota' => true],
-            'mostrador' => [...$basic, 'expedientes' => true, 'catalogo' => true, 'reservas' => true, 'boletas' => true, 'calendario' => true],
+            'encargado' => [...$basic, 'servicios' => true, 'expedientes' => true, 'catalogo' => true, 'reservas' => true, 'informes' => true, 'ausencias' => true, 'calendario' => true, 'flota' => true],
+            'mostrador' => [...$basic, 'servicios' => true, 'expedientes' => true, 'catalogo' => true, 'reservas' => true, 'boletas' => true, 'calendario' => true],
             'chofer' => [...$basic, 'flota' => true],
             default => $basic,
         };

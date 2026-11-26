@@ -7,6 +7,7 @@ import {
     FileText,
     LayoutDashboard,
     Receipt,
+    Sparkles,
     Truck,
     Users,
 } from 'lucide-react';
@@ -30,6 +31,7 @@ export function AppSidebar() {
 
     const mainNavItems: NavItem[] = [
         { title: 'Panel General', href: dashboard().url, icon: LayoutDashboard },
+        ...(can.servicios ? [{ title: 'Servicios funerarios', href: '/servicios', icon: Sparkles }] : []),
         ...(can.expedientes ? [{ title: 'Expedientes', href: '/expedientes', icon: FileText }] : []),
         ...(can.catalogo ? [{ title: 'Urnas y Ataúdes', href: '/catalogo', icon: Archive }] : []),
         ...(can.reservas ? [{ title: 'Reservas', href: '/reservas', icon: ClipboardList }] : []),
