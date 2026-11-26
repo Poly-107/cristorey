@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { CircleDollarSign, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import {
@@ -114,7 +114,7 @@ export default function Reservations({ reservations, products, statuses }: Props
             <div className="p-4 sm:p-6 lg:p-8">
                 <PageHeader
                     title="Reserva Anticipada de Urnas y Ataúdes"
-                    subtitle="Las reservas descuentan stock automáticamente. Registre abonos y controle el saldo pendiente."
+                    subtitle="Reserva → abonos → pago total → emisión de boleta. Descuentan stock automáticamente."
                     actions={<Button onClick={openCreate}><Plus className="size-4" /> Nueva reserva</Button>}
                 />
 
@@ -122,6 +122,10 @@ export default function Reservations({ reservations, products, statuses }: Props
                     <StatCard label="Reservas registradas" value={reservations.length} icon={<CircleDollarSign className="size-5" />} />
                     <StatCard label="Abonos recibidos" value={clp(totalPaid)} tone="green" icon={<CircleDollarSign className="size-5" />} />
                     <StatCard label="Saldos pendientes" value={clp(totalPending)} tone="amber" icon={<CircleDollarSign className="size-5" />} />
+                </div>
+
+                <div className="mb-5 rounded-lg border border-[#d8e8d5] bg-[#f4fbf2] p-3 text-sm text-[#2f6b45]">
+                    <strong>Orden del flujo:</strong> 1) cree la reserva, 2) registre abonos, 3) al saldar pasa a «Pagado Total» y 4) use el botón verde <strong>Emitir boleta</strong>. La etiqueta «Anulada» pertenece solo a boletas anuladas, no a reservas nuevas.
                 </div>
 
                 <Card padded={false}>
@@ -156,6 +160,13 @@ export default function Reservations({ reservations, products, statuses }: Props
                                         <Td><Badge tone={toneForStatus(item.status)}>{item.status}</Badge></Td>
                                         <Td>
                                             <div className="flex gap-1">
+                                                <Link
+                                                    href={`/boletas?reservation_id=${item.id}`}
+                                                    title="Emitir boleta desde esta reserva"
+                                                    className="inline-flex items-center gap-1 rounded-lg border-2 border-green-800 bg-gradient-to-r from-green-400 to-green-600 px-3 py-1.5 text-xs font-semibold text-black shadow-sm transition hover:from-green-500 hover:to-green-700"
+                                                >
+                                                    <CircleDollarSign className="size-4" /> Emitir boleta
+                                                </Link>
                                                 <Button
                                                     variant="light"
                                                     title="Registrar abono"

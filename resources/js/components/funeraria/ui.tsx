@@ -86,7 +86,7 @@ export function Badge({
 
 export function toneForStatus(status: string): string {
     const value = status.toLowerCase();
-    if (['urgente', 'rechazada', 'vencido'].includes(value)) return 'red';
+    if (['urgente', 'rechazada', 'vencido', 'anulada', 'anulado', 'cancelada', 'cancelado'].includes(value)) return 'red';
     if (['pagado total', 'entregado', 'aprobada', 'finalizado', 'disponible'].includes(value)) return 'green';
     if (['en curso', 'en ruta', 'pendiente', 'documentos pendientes', 'reservado/abonado', 'programado'].includes(value)) return 'amber';
     return 'lavender';

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\InvoiceMail;
 use App\Models\Invoice;
+use App\Models\Reservation;
 use App\Models\Service;
 use App\Support\Funeraria;
 use App\Support\Notifier;
@@ -15,19 +16,31 @@ class InvoiceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Invoice::with(['service', 'items'])->orderByDesc('id');
+        $query = Invoice::with(['service', 'reservation', 'items'])->orderByDesc('id');
 
         if ($request->filled('search')) {
             $search = $request->string('search')->toString();
             $query->where(function ($query) use ($search) {
                 $query->where('folio', 'like', "%{$search}%")
-                    ->orWhereHas('service', fn ($query) => $query->where('code', 'like', "%{$search}%"));
+                    ->orWhereHas('service', fn ($query) => $query->where('code', 'like', "%{$search}%"))
+                    ->orWhereHas('reservation', fn ($query) => $query->where('customer_name', 'like', "%{$search}%"));
             });
         }
+
+        $reservations = Reservation::with('product')
+            ->orderByDesc('id')
+            ->get(['id', 'folio', 'product_id', 'customer_name', 'customer_email', 'total_value', 'paid_amount', 'status']);
+
+        $reservationId = (int) $request->query('reservation_id', 0);
+        $selectedReservation = $reservationId > 0
+            ? $reservations->first(fn (Reservation $reservation) => $reservation->id === $reservationId)
+            : null;
 
         return Inertia::render('invoices/index', [
             'invoices' => $query->get(),
             'services' => Service::orderByDesc('service_date')->get(['id', 'code', 'deceased_name', 'contractor_name', 'contractor_email']),
+            'reservations' => $reservations,
+            'selectedReservation' => $selectedReservation,
             'ufValue' => Funeraria::ufValue(),
             'afpUf' => Funeraria::afpUf(),
             'filters' => $request->only(['search']),
@@ -37,25 +50,49 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         $data = $this->validateData($request);
-        $amounts = $this->calculate($data, $request);
 
-        $invoice = DB::transaction(function () use ($data, $amounts) {
+        if ($request->filled('service_id') && $request->filled('reservation_id')) {
+            return back()->with('error', 'Elija solo un origen: expediente o reserva.');
+        }
+
+        $reservation = ! empty($data['reservation_id'])
+            ? Reservation::with('product')->findOrFail($data['reservation_id'])
+            : null;
+
+        $items = $data['items'] ?? [];
+        if (! $items && $reservation) {
+            $items = [[
+                'description' => $reservation->product
+                    ? 'Reserva '.$reservation->folio.' · '.$reservation->product->name
+                    : 'Reserva '.$reservation->folio.' · '.$reservation->customer_name,
+                'quantity' => 1,
+                'unit_price' => $reservation->total_value,
+            ]];
+        }
+
+        $amounts = $this->calculate($data, $request, $items);
+
+        $invoice = DB::transaction(function () use ($data, $amounts, $items) {
             $invoice = Invoice::create([
                 'folio' => $this->nextFolio(),
-                'service_id' => $data['service_id'],
+                'service_id' => $data['service_id'] ?? null,
+                'reservation_id' => $data['reservation_id'] ?? null,
                 'issue_date' => $data['issue_date'],
                 ...$amounts,
             ]);
 
-            $this->syncItems($invoice, $data['items']);
+            $this->syncItems($invoice, $items);
 
             return $invoice;
         });
 
-        $service = Service::findOrFail($data['service_id']);
+        $recipient = ! empty($data['service_id'])
+            ? Service::find($data['service_id'])?->contractor_email
+            : $reservation?->customer_email;
+
         $mailSent = false;
-        if ($request->boolean('send_email')) {
-            $mailSent = Notifier::send($service->contractor_email, new InvoiceMail($invoice->load('service')));
+        if ($request->boolean('send_email') && $recipient) {
+            $mailSent = Notifier::send($recipient, new InvoiceMail($invoice->load(['service', 'reservation'])));
             if ($mailSent) {
                 $invoice->update(['email_sent' => true]);
             }
@@ -74,17 +111,35 @@ class InvoiceController extends Controller
         }
 
         $data = $this->validateData($request);
-        $amounts = $this->calculate($data, $request);
 
-        DB::transaction(function () use ($invoice, $data, $amounts) {
+        if ($request->filled('service_id') && $request->filled('reservation_id')) {
+            return back()->with('error', 'Elija solo un origen: expediente o reserva.');
+        }
+
+        $items = $data['items'] ?? [];
+        if (! $items && $invoice->reservation_id) {
+            $reservation = $invoice->load('reservation.product')->reservation;
+            $items = [[
+                'description' => $reservation?->product
+                    ? 'Reserva '.$reservation->folio.' · '.$reservation->product->name
+                    : 'Reserva '.($reservation?->folio ?? '').' · '.($reservation?->customer_name ?? 'Cliente'),
+                'quantity' => 1,
+                'unit_price' => $reservation?->total_value ?? 0,
+            ]];
+        }
+
+        $amounts = $this->calculate($data, $request, $items);
+
+        DB::transaction(function () use ($invoice, $data, $amounts, $items) {
             $invoice->update([
-                'service_id' => $data['service_id'],
+                'service_id' => $data['service_id'] ?? null,
+                'reservation_id' => $data['reservation_id'] ?? null,
                 'issue_date' => $data['issue_date'],
                 ...$amounts,
             ]);
 
             $invoice->items()->delete();
-            $this->syncItems($invoice, $data['items']);
+            $this->syncItems($invoice, $items);
         });
 
         return redirect()->route('boletas.index')->with('success', 'Boleta '.$invoice->folio.' actualizada.');
@@ -106,7 +161,7 @@ class InvoiceController extends Controller
 
     public function print(Invoice $invoice)
     {
-        $invoice->load(['items', 'service.product']);
+        $invoice->load(['items', 'service.product', 'reservation.product']);
 
         return Inertia::render('print/invoice', [
             'invoice' => $invoice,
@@ -122,22 +177,23 @@ class InvoiceController extends Controller
     private function validateData(Request $request): array
     {
         return $request->validate([
-            'service_id' => 'required|exists:services,id',
+            'service_id' => 'nullable|exists:services,id|required_without:reservation_id',
+            'reservation_id' => 'nullable|exists:reservations,id|required_without:service_id',
             'issue_date' => 'required|date',
-            'items' => 'required|array|min:1',
-            'items.*.description' => 'required|string|max:255',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|integer|min:0',
+            'items' => 'nullable|array|min:1|required_without:reservation_id',
+            'items.*.description' => 'required_with:items|string|max:255',
+            'items.*.quantity' => 'required_with:items|integer|min:1',
+            'items.*.unit_price' => 'required_with:items|integer|min:0',
             'apply_afp' => 'boolean',
             'family_copay' => 'nullable|integer|min:0',
             'send_email' => 'boolean',
         ]);
     }
 
-    private function calculate(array $data, Request $request): array
+    private function calculate(array $data, Request $request, array $items): array
     {
         $net = 0;
-        foreach ($data['items'] as $item) {
+        foreach ($items as $item) {
             $net += $item['quantity'] * $item['unit_price'];
         }
 

@@ -2,7 +2,7 @@ Estimado/a cliente:
 
 Adjuntamos el comprobante de la boleta {{ $invoice->folio }} de Funeraria Cristo Rey.
 
-Expediente: {{ $invoice->service->code }}
+Origen: {{ $invoice->service ? 'Expediente '.$invoice->service->code : 'Reserva '.$invoice->reservation?->folio }}
 Fecha: {{ $invoice->issue_date->format('d/m/Y') }}
 Neto: ${{ number_format($invoice->net_amount, 0, ',', '.') }}
 IVA (19%): ${{ number_format($invoice->iva_amount, 0, ',', '.') }}

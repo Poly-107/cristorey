@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { Pencil, Plus, Printer, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     Badge,
     Button,
@@ -29,7 +29,8 @@ type Item = {
 type Invoice = {
     id: number;
     folio: string;
-    service_id: number;
+    service_id: number | null;
+    reservation_id: number | null;
     issue_date: string;
     net_amount: number;
     iva_amount: number;
@@ -40,12 +41,26 @@ type Invoice = {
     voided_at: string | null;
     void_reason: string | null;
     service: { id: number; code: string; deceased_name: string; contractor_name: string | null } | null;
+    reservation: ReservationOption | null;
     items: Item[];
+};
+
+type ReservationOption = {
+    id: number;
+    folio: string;
+    customer_name: string;
+    customer_email: string | null;
+    total_value: number;
+    paid_amount: number;
+    status: string;
+    product: { id: number; name: string } | null;
 };
 
 type Props = {
     invoices: Invoice[];
     services: Array<{ id: number; code: string; deceased_name: string; contractor_name: string | null; contractor_email: string | null }>;
+    reservations: ReservationOption[];
+    selectedReservation: ReservationOption | null;
     ufValue: number;
     afpUf: number;
     filters: { search?: string };
@@ -54,25 +69,43 @@ type Props = {
 type ItemForm = { description: string; quantity: string; unit_price: string };
 type FormState = {
     service_id: string;
+    reservation_id: string;
     issue_date: string;
     apply_afp: boolean;
     family_copay: string;
     send_email: boolean;
 };
 
-export default function Invoices({ invoices, services, ufValue, afpUf }: Props) {
+const itemFromReservation = (reservation: ReservationOption | null): ItemForm[] => reservation
+    ? [{
+        description: `Reserva ${reservation.folio} · ${reservation.customer_name}${reservation.product ? ` · ${reservation.product.name}` : ''}`,
+        quantity: '1',
+        unit_price: String(reservation.total_value),
+    }]
+    : [{ description: '', quantity: '1', unit_price: '' }];
+
+export default function Invoices({ invoices, services, reservations, selectedReservation, ufValue, afpUf }: Props) {
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState<Invoice | null>(null);
     const [voiding, setVoiding] = useState<Invoice | null>(null);
     const [voidReason, setVoidReason] = useState('');
     const [form, setForm] = useState<FormState>({
-        service_id: '',
+        service_id: selectedReservation ? '' : (services[0] ? String(services[0].id) : ''),
+        reservation_id: selectedReservation ? String(selectedReservation.id) : '',
         issue_date: new Date().toISOString().slice(0, 10),
         apply_afp: false,
         family_copay: '0',
         send_email: false,
     });
-    const [items, setItems] = useState<ItemForm[]>([{ description: '', quantity: '1', unit_price: '' }]);
+    const [items, setItems] = useState<ItemForm[]>(itemFromReservation(selectedReservation));
+
+    useEffect(() => {
+        if (!selectedReservation) return;
+        const id = Number(selectedReservation.id);
+        setForm((current) => ({ ...current, service_id: '', reservation_id: String(id) }));
+        setItems(itemFromReservation(selectedReservation));
+        setOpen(true);
+    }, [selectedReservation]);
 
     const activeInvoices = useMemo(() => invoices.filter((invoice) => !invoice.voided_at), [invoices]);
 
@@ -92,6 +125,7 @@ export default function Invoices({ invoices, services, ufValue, afpUf }: Props) 
         setEditing(null);
         setForm({
             service_id: services[0] ? String(services[0].id) : '',
+            reservation_id: '',
             issue_date: new Date().toISOString().slice(0, 10),
             apply_afp: false,
             family_copay: '0',
@@ -104,7 +138,8 @@ export default function Invoices({ invoices, services, ufValue, afpUf }: Props) 
     const openEdit = (invoice: Invoice) => {
         setEditing(invoice);
         setForm({
-            service_id: String(invoice.service_id),
+            service_id: invoice.service_id ? String(invoice.service_id) : '',
+            reservation_id: invoice.reservation_id ? String(invoice.reservation_id) : '',
             issue_date: invoice.issue_date,
             apply_afp: invoice.afp_discount > 0,
             family_copay: String(invoice.family_copay),
@@ -159,9 +194,13 @@ export default function Invoices({ invoices, services, ufValue, afpUf }: Props) 
             <div className="p-4 sm:p-6 lg:p-8">
                 <PageHeader
                     title="Boletas y Detalle de Cobros"
-                    subtitle="Emisión y mantenedor de boletas con desglose de ítems, IVA, Cuota Mortuoria AFP y copago familiar."
+                    subtitle="Emita desde un expediente o desde una reserva. Desglose de ítems, IVA, Cuota Mortuoria AFP y copago familiar."
                     actions={<Button onClick={openCreate} disabled={services.length === 0}><Plus className="size-4" /> Emitir boleta</Button>}
                 />
+
+                <div className="mb-5 rounded-lg border border-[#d8e8d5] bg-[#f4fbf2] p-3 text-sm text-[#2f6b45]">
+                    <strong>Flujo:</strong> la reserva se crea primero; luego se registran abonos, se completa el pago total y recién se emite la boleta. Aquí puede ver boletas de <strong>Expediente</strong> y <strong>Desde reserva</strong>. «Anulada» es solo el estado de una boleta anulada.
+                </div>
 
                 <div className="mb-5 grid gap-4 sm:grid-cols-3">
                     <StatCard label="Boletas vigentes" value={activeInvoices.length} icon={<Printer className="size-5" />} />
@@ -177,7 +216,7 @@ export default function Invoices({ invoices, services, ufValue, afpUf }: Props) 
                             <thead>
                                 <tr>
                                     <Th>Folio</Th>
-                                    <Th>Expediente</Th>
+                                    <Th>Origen</Th>
                                     <Th>Fecha</Th>
                                     <Th>Neto</Th>
                                     <Th>IVA</Th>
@@ -193,7 +232,13 @@ export default function Invoices({ invoices, services, ufValue, afpUf }: Props) 
                                 {invoices.map((invoice) => (
                                     <tr key={invoice.id} className={invoice.voided_at ? 'opacity-60' : ''}>
                                         <Td className="font-medium text-[#5a4a86]">{invoice.folio}</Td>
-                                        <Td>{invoice.service?.code ?? '—'}</Td>
+                                        <Td>
+                                            <Badge tone={invoice.reservation_id ? 'green' : 'lavender'}>
+                                                {invoice.reservation_id
+                                                    ? `Desde reserva ${invoice.reservation?.folio ?? ''}`
+                                                    : `Expediente ${invoice.service?.code ?? ''}`}
+                                            </Badge>
+                                        </Td>
                                         <Td>{dateES(invoice.issue_date)}</Td>
                                         <Td>{clp(invoice.net_amount)}</Td>
                                         <Td>{clp(invoice.iva_amount)}</Td>
@@ -229,10 +274,34 @@ export default function Invoices({ invoices, services, ufValue, afpUf }: Props) 
             <Modal open={open} onClose={() => setOpen(false)} title={editing ? `Editar boleta ${editing.folio}` : 'Emitir boleta'} wide>
                 <form onSubmit={(event) => { event.preventDefault(); submit(); }} className="space-y-5">
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <Field label="Expediente vinculado">
-                            <select className="funeraria-input" value={form.service_id} onChange={(e) => setForm({ ...form, service_id: e.target.value })} required>
+                        <Field label="Expediente vinculado (opcional)">
+                            <select
+                                className="funeraria-input"
+                                value={form.service_id}
+                                onChange={(e) => setForm({ ...form, service_id: e.target.value, reservation_id: e.target.value ? '' : form.reservation_id })}
+                            >
+                                <option value="">Sin expediente</option>
                                 {services.map((service) => (
                                     <option key={service.id} value={service.id}>{service.code} · {service.deceased_name}</option>
+                                ))}
+                            </select>
+                        </Field>
+                        <Field label="Reserva vinculada (opcional)">
+                            <select
+                                className="funeraria-input"
+                                value={form.reservation_id}
+                                onChange={(e) => {
+                                    const reservationId = e.target.value;
+                                    const reservation = reservations.find((item) => String(item.id) === reservationId) ?? null;
+                                    setForm({ ...form, reservation_id: reservationId, service_id: reservationId ? '' : form.service_id });
+                                    if (reservation) setItems(itemFromReservation(reservation));
+                                }}
+                            >
+                                <option value="">Sin reserva</option>
+                                {reservations.map((reservation) => (
+                                    <option key={reservation.id} value={reservation.id}>
+                                        {reservation.folio} · {reservation.customer_name} · {reservation.status}
+                                    </option>
                                 ))}
                             </select>
                         </Field>

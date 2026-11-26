@@ -118,6 +118,10 @@ export default function Services({ services, products, statuses, rooms, filters 
                     actions={<Button onClick={openCreate}><Plus className="size-4" /> Nuevo expediente</Button>}
                 />
 
+                <div className="mb-5 rounded-lg border border-[#e5dfd5] bg-[#faf8f5] p-3 text-sm text-[#6f6878]">
+                    Para facturar, emita la boleta desde este expediente o desde la reserva correspondiente. El orden es reserva → abonos → pago total → emisión de boleta.
+                </div>
+
                 <Card className="mb-5">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                         <Field label="Buscar por folio, fallecido o contratante" className="flex-1">

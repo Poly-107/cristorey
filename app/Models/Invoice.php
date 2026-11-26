@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Invoice extends Model
 {
     protected $fillable = [
-        'folio', 'service_id', 'issue_date', 'net_amount', 'iva_amount',
+        'folio', 'service_id', 'reservation_id', 'issue_date', 'net_amount', 'iva_amount',
         'afp_discount', 'family_copay', 'total', 'email_sent', 'voided_at', 'void_reason',
     ];
 
@@ -25,6 +25,11 @@ class Invoice extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class);
     }
 
     public function items(): HasMany

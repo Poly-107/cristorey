@@ -25,6 +25,11 @@ class Reservation extends Model
         return $this->hasMany(ReservationPayment::class)->orderBy('paid_on');
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     public function getPendingAttribute(): int
     {
         return max(0, $this->total_value - $this->paid_amount);

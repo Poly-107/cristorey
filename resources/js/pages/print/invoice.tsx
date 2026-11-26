@@ -14,13 +14,18 @@ type Props = {
         total: number;
         voided_at: string | null;
         void_reason: string | null;
-        service: { code: string; deceased_name: string; contractor_name: string | null };
+        service: { code: string; deceased_name: string; contractor_name: string | null } | null;
+        reservation: { folio: string; customer_name: string; product: { name: string } | null } | null;
         items: Array<{ description: string; quantity: number; unit_price: number; subtotal: number }>;
     };
     company: { name: string; rut: string; address: string; phone: string };
 };
 
 export default function PrintInvoice({ invoice, company }: Props) {
+    const origin = invoice.service
+        ? `Expediente ${invoice.service.code}`
+        : `Reserva ${invoice.reservation?.folio ?? ''}`;
+
     return (
         <>
             <Head title={`Boleta ${invoice.folio}`} />
@@ -29,77 +34,78 @@ export default function PrintInvoice({ invoice, company }: Props) {
                     <button
                         type="button"
                         onClick={() => window.print()}
-                        className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#7b68ae] px-4 py-2 text-sm font-medium text-white hover:bg-[#69579b]"
+                        className="inline-flex items-center gap-2 rounded-lg bg-[#2d2542] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#5a4a86]"
                     >
-                        <Printer className="size-4" /> Imprimir / guardar como PDF
+                        <Printer className="size-4" /> Imprimir / guardar PDF
                     </button>
                 </div>
-                <article className="mx-auto max-w-3xl bg-white p-10 text-[#2d2542] shadow-sm">
-                    <header className="flex items-start justify-between border-b-2 border-[#7b68ae] pb-6">
+                <main className="mx-auto max-w-3xl bg-white px-8 py-10 shadow-sm">
+                    <header className="mb-8 flex items-start justify-between border-b border-[#e5dfd5] pb-6">
                         <div>
-                            <h1 className="text-2xl font-semibold">{company.name}</h1>
-                            <p className="mt-1 text-sm text-[#6f6878]">RUT {company.rut} · {company.address}</p>
+                            <h1 className="text-xl font-semibold text-[#2d2542]">{company.name}</h1>
+                            <p className="text-sm text-[#6f6878]">RUT {company.rut}</p>
+                            <p className="text-sm text-[#6f6878]">{company.address}</p>
                             <p className="text-sm text-[#6f6878]">{company.phone}</p>
                         </div>
                         <div className="text-right">
-                            <p className="text-xs uppercase tracking-wide text-[#8b8495]">Boleta</p>
-                            <p className="mt-1 text-xl font-semibold text-[#5a4a86]">{invoice.folio}</p>
+                            <p className="text-lg font-semibold text-[#5a4a86]">{invoice.folio}</p>
                             <p className="text-sm text-[#6f6878]">{dateES(invoice.issue_date)}</p>
-                            {invoice.voided_at && (
-                                <p className="mt-2 inline-flex rounded-full border border-[#efc7c7] bg-[#fff5f5] px-2.5 py-0.5 text-xs font-medium text-[#a33]">ANULADA</p>
-                            )}
+                            {invoice.voided_at && <p className="mt-1 text-sm font-semibold text-[#9b4148]">ANULADA</p>}
                         </div>
                     </header>
 
-                    {invoice.voided_at && (
-                        <div className="mt-6 rounded-lg border border-[#efc7c7] bg-[#fff5f5] p-4 text-sm text-[#8a3d3d]">
-                            <p className="font-semibold">Documento anulado con fecha {dateES(invoice.voided_at)}.</p>
-                            <p className="mt-1">Motivo: {invoice.void_reason ?? 'No indicado'}</p>
-                        </div>
+                    <section className="mb-8 rounded-lg border border-[#e5dfd5] p-4 text-sm">
+                        <p><strong>Origen:</strong> {origin}</p>
+                        <p>
+                            <strong>Cliente:</strong>{' '}
+                            {invoice.service
+                                ? (invoice.service.contractor_name ?? invoice.service.deceased_name)
+                                : (invoice.reservation?.customer_name ?? '—')}
+                        </p>
+                        {invoice.reservation?.product && <p><strong>Producto reservado:</strong> {invoice.reservation.product.name}</p>}
+                    </section>
+
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b border-[#e5dfd5] text-left text-[#6f6878]">
+                                <th className="py-2">Descripción</th>
+                                <th className="py-2 text-center">Cant.</th>
+                                <th className="py-2 text-right">P. unitario</th>
+                                <th className="py-2 text-right">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {invoice.items.map((item, index) => (
+                                <tr key={index} className="border-b border-[#f1ede6]">
+                                    <td className="py-2">{item.description}</td>
+                                    <td className="py-2 text-center">{item.quantity}</td>
+                                    <td className="py-2 text-right">{clp(item.unit_price)}</td>
+                                    <td className="py-2 text-right">{clp(item.subtotal)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    <section className="mt-8 ml-auto max-w-sm space-y-1.5 text-sm">
+                        <p className="flex justify-between"><span>Neto</span><span>{clp(invoice.net_amount)}</span></p>
+                        <p className="flex justify-between"><span>IVA (19%)</span><span>{clp(invoice.iva_amount)}</span></p>
+                        <p className="flex justify-between"><span>Cuota Mortuoria AFP</span><span>-{clp(invoice.afp_discount)}</span></p>
+                        <p className="flex justify-between"><span>Copago familiar</span><span>{clp(invoice.family_copay)}</span></p>
+                        <p className="mt-3 flex justify-between border-t border-[#e5dfd5] pt-3 text-base font-semibold text-[#2d2542]">
+                            <span>Total</span><span>{clp(invoice.total)}</span>
+                        </p>
+                    </section>
+
+                    {invoice.void_reason && (
+                        <p className="mt-8 rounded-lg bg-[#fbeaea] p-3 text-sm text-[#9b4148]">
+                            <strong>Motivo de anulación:</strong> {invoice.void_reason}
+                        </p>
                     )}
 
-                    <section className="mt-8 rounded-lg border border-[#e5dfd5] p-4 text-sm">
-                        <p><span className="text-[#8b8495]">Expediente:</span> <strong>{invoice.service.code}</strong></p>
-                        <p className="mt-1"><span className="text-[#8b8495]">Fallecido/a:</span> {invoice.service.deceased_name}</p>
-                        <p className="mt-1"><span className="text-[#8b8495]">Contratante:</span> {invoice.service.contractor_name ?? '—'}</p>
-                    </section>
-
-                    <section className="mt-8">
-                        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#7b68ae]">Detalle de cobros</h2>
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-[#e5dfd5] text-left text-xs uppercase text-[#8b8495]">
-                                    <th className="py-2">Descripción</th>
-                                    <th className="py-2 text-center">Cant.</th>
-                                    <th className="py-2 text-right">Unitario</th>
-                                    <th className="py-2 text-right">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {invoice.items.map((item, index) => (
-                                    <tr key={index} className="border-b border-[#f1ece5]">
-                                        <td className="py-3">{item.description}</td>
-                                        <td className="py-3 text-center">{item.quantity}</td>
-                                        <td className="py-3 text-right">{clp(item.unit_price)}</td>
-                                        <td className="py-3 text-right">{clp(item.subtotal)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        <div className="mt-6 ml-auto max-w-xs space-y-2 text-sm">
-                            <p className="flex justify-between"><span className="text-[#6f6878]">Neto</span><span>{clp(invoice.net_amount)}</span></p>
-                            <p className="flex justify-between"><span className="text-[#6f6878]">IVA (19%)</span><span>{clp(invoice.iva_amount)}</span></p>
-                            <p className="flex justify-between"><span className="text-[#6f6878]">Cuota Mortuoria AFP</span><span>-{clp(invoice.afp_discount)}</span></p>
-                            <p className="flex justify-between"><span className="text-[#6f6878]">Copago familiar</span><span>{clp(invoice.family_copay)}</span></p>
-                            <p className="flex justify-between border-t-2 border-[#7b68ae] pt-3 text-lg font-semibold"><span>Total</span><span>{clp(invoice.total)}</span></p>
-                        </div>
-                    </section>
-
-                    <footer className="mt-16 border-t border-[#e5dfd5] pt-6 text-center text-xs text-[#8b8495]">
-                        Documento generado por el sistema de gestión de Funeraria Cristo Rey · Temuco, Chile
+                    <footer className="mt-10 border-t border-[#e5dfd5] pt-5 text-center text-xs text-[#8b8495]">
+                        Gracias por confiar en nosotros · Funeraria Cristo Rey · Temuco, Chile
                     </footer>
-                </article>
+                </main>
             </div>
         </>
     );
